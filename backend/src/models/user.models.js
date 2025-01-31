@@ -1,8 +1,10 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { connectionDatabase } from "../config/DB.js";
 
 connectionDatabase(); 
+
 const userSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -25,7 +27,7 @@ const userSchema = new mongoose.Schema({
       // Role Management
       role: {
         type: String,
-        enum: ["student", "instructor"],
+        enum: ["student", "admin"],
         default: "student",
       }
 },{timestamps: true})
@@ -37,6 +39,16 @@ userSchema.pre("save", async function (next)  {
     this.password = await bcrypt.hash(this.password, 10);
     next();
 })
+
+// JWT AUTH TOKEN GENERATOR
+userSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign(
+      { userId: this._id, email: this.email }, // Payload
+      process.env.JWT_SECRET, // Secret key
+      { expiresIn: "1h" } // Token expiration time
+  );
+  return token;
+};
 
 userSchema.methods.comparePassword = async function (enteredPassword) {
     return await  bcrypt.compare(enteredPassword, this.password);

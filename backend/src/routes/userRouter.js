@@ -1,45 +1,84 @@
 import express from "express";
 import { User } from "../models/user.models.js";
+import jwt from "jsonwebtoken";
+import { userAuth } from "../middleware/userAuth.js";
 const userRouter = express.Router();
 
-// Profile Management
 
-// GET /api/profile - Get user profile.
-// PUT /api/profile - Update user profile.
-// DELETE /api/profile - Delete user account.
-userRouter.get('/profile', async (req, res) => {
+userRouter.get('/profile/:id', userAuth, async (req, res) => {
+    try{
+         const  _id  = req.params.id;
+          // Find user in a single query
+        const userexist = await User.findById(_id);
 
-});
-userRouter.put('/profile', async (req, res) => {
-    
-});
-userRouter.delete('/profile', async (req, res) => {
-    
-});
+        if (!userexist) {
+            return res.status(401).json({ message: "User does not exist." });
+        }
+         const user = await User.findById(_id);
+         res.status(201).json({
+            message: "User Details",
+            name: user.name,
+            email: user.email
+         })
 
-// Authentication
+    }
+    catch(error){
+            console.log("Error: ",error);
+            res.status(500).json({ message: "Internal Server Error", error: error.message });
+        }
+    }
+);
 
-// POST /api/signup - User registration.
-// POST /api/login - User login.
-// POST /api/logout - User logout.
-// POST /api/refresh-token - Refresh access token (if using JWT).
-// POST /api/forgot-password - Request password reset.
-// POST /api/reset-password - Reset password using a token.
+
 userRouter.post('/login', async (req, res) => {
+    try{
+
+        let { email, password } = req.body;
+
+        if(!email || !password){
+            res.status(401).json({ message: "Email and Password is required."});
+        }
+            const user = await User.findOne({ email});
+            if(!user){
+                res.status(401).json({message: "Invalid email."});
+            }
+            const isValidPassword = await user.comparePassword(password);
+            if(!isValidPassword){
+                res.status(401).json({message: "Invalid password."});
+            }
+    
+            const token = user.generateAuthToken();
+            res.status(200).json({
+                message: "Login successful.",
+                token,
+                user: {
+                    id: user._id,
+                    email: user.email,
+                    name: user.name
+                }
+            });
+    }
+    
+    catch(error){
+       console.log("Error: ", error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+    }
     
 });
+
 userRouter.post('/signup', async (req, res) => {
     try{
         const { email, name, password } = req.body;
+
+        if(!email || !password || !name) {
+            return res.status(400).json({ message: "All fields are mandatory." });
+        }
 
         const existingUser = await User.findOne({email});
         if(existingUser){
             return res.status(400).json({ message: "User already exists." });
         };
 
-        if(!email || !password || !name) {
-            return res.status(400).json({ message: "All fields are mandatory." });
-        }
         const user = await User.create({ email, name, password });
         res.status(201).json(
             {
@@ -47,7 +86,7 @@ userRouter.post('/signup', async (req, res) => {
                 user: {
                     id: user._id,
                     email: user.email,
-                    role: user.role
+                    name: user.name 
                 }
             }
         );
@@ -60,37 +99,59 @@ userRouter.post('/signup', async (req, res) => {
         
     }
 });
-userRouter.post('/logout', async (req, res) => {
-    
-});
-userRouter.post('/refresh-token', async (req, res) => {
-    
-});
-userRouter.post('/forgot-password', async (req, res) => {
-    
-});
-userRouter.post('/reset-password', async (req, res) => {
-    
+
+userRouter.put('/update/:id', async (req, res) => {
+    try{
+        const { email, name, password } = req.body;
+
+        const existingUser = await User.findOne({email});
+        if(existingUser){
+            return res.status(400).json({ message: "User already exists." });
+        };
+
+        if(!email || !password || !name) {
+            return res.status(400).json({ message: "All fields are mandatory." });
+        }
+        const userNew = await User.findOneAndUpdate({ email, name, password });
+        res.status(201).json(
+            {
+                message: "User Updated successfully.",
+                name: userNew.name
+            }
+        );
+        
+    }
+    catch(error){
+        console.log("Error: ",error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
+
+        
+    }
 });
 
-// Admin Specific routes
 
-// GET /api/ - Get all users (admin only).
-// GET /api/:id - Get user by ID (admin only).
-// PUT /api/:id - Update user by ID (admin only).
-// DELETE /api/:id - Delete user by ID (admin only).
+userRouter.delete('/delete', async (req, res) => {
+    try{
+        const { email, name, password } = req.body;
 
-userRouter.get('/', async (req, res) => {
+        const userNew = await User.findOneAndDelete({ email, name, password });
+        res.status(201).json(
+            {
+                message: "User deleted successfully."
+               
+            }
+        );
+        
+    }
+    catch(error){
+        console.log("Error: ",error);
+        res.status(500).json({ message: "Internal Server Error", error: error.message });
 
+        
+    }
 });
-userRouter.get('/:id', async (req, res) => {
 
-});
-userRouter.put('/:id', async (req, res) => {
 
-});
-userRouter.delete('/:id', async (req, res) => {
 
-});
 
 export { userRouter };
