@@ -130,7 +130,7 @@ userRouter.put('/update/:id', async (req, res) => {
 });
 
 
-userRouter.delete('/delete', async (req, res) => {
+userRouter.delete('/delete/:id', userAuth, async (req, res) => {
     try{
         const { email, name, password } = req.body;
 
