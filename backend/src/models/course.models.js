@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import { connectionDatabase } from "../config/DB.js";
+import jwt from "jsonwebtoken";
 
 connectionDatabase()
 
@@ -33,5 +34,14 @@ const courseSchema = new mongoose.Schema({
 
 },{timestamps: true});
 
+// JWT AUTH TOKEN GENERATOR
+courseSchema.methods.generateAuthToken = function () {
+  const token = jwt.sign(
+      { userId: this._id, email: this.email }, // Payload
+      process.env.JWT_SECRET, // Secret key
+      { expiresIn: "1h" } // Token expiration time
+  );
+  return token;
+};
 
 export const Course = mongoose.model('Course', courseSchema);

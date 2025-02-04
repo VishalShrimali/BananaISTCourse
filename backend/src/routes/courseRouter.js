@@ -1,16 +1,18 @@
 import express from "express";
 import jwt from "jsonwebtoken";
 import {Course} from "../models/course.models.js";
-import { userAuth } from "../middleware/userAuth.js";
+import {courseAuth} from "../middleware/courseAuth.js";
 
 const courseRoute = express.Router();
 
-courseRoute.post('/add',  async (req, res) => {
+courseRoute.post('/add',    async (req, res) => {
     try{
         let { title,  description, price, lessons, studentsEnrolled } = req.body;
         const newcourse = await Course.create({title,  description, price, lessons, studentsEnrolled});
+        const token = newcourse.generateAuthToken();
         return res.status(201).json({
             message: "Course added succesfully",
+            token
             
         })
     }
@@ -23,7 +25,7 @@ courseRoute.post('/add',  async (req, res) => {
     }
 });
 
-courseRoute.get('/view/:id',  async (req, res) => {
+courseRoute.get('/view/:id', courseAuth, async (req, res) => {
     try{
          const _id  = req.params.id;
                   // Find user in a single query
@@ -48,7 +50,7 @@ courseRoute.get('/view/:id',  async (req, res) => {
     }
 });
 
-courseRoute.put('/update/:id',  async (req, res) => {
+courseRoute.put('/update/:id', courseAuth, async (req, res) => {
   try{
         const { title, description, price } = req.body;
 
@@ -79,7 +81,7 @@ courseRoute.put('/update/:id',  async (req, res) => {
     
 });
 
-courseRoute.delete('/remove/:id',  async (req, res) => {
+courseRoute.delete('/remove/:id', courseAuth, async (req, res) => {
     try{
           const _id = req.params.id
           const course = await Course.findByIdAndDelete(_id);
