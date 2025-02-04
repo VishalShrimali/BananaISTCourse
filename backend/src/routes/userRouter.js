@@ -9,12 +9,12 @@ userRouter.get('/profile/:id', userAuth, async (req, res) => {
     try{
          const  _id  = req.params.id;
           // Find user in a single query
-        const userexist = await User.findById(_id);
+        const user = await User.findById(_id);
 
-        if (!userexist) {
+        if (!user) {
             return res.status(401).json({ message: "User does not exist." });
         }
-         const user = await User.findById(_id);
+
          res.status(201).json({
             message: "User Details",
             name: user.name,
@@ -28,7 +28,6 @@ userRouter.get('/profile/:id', userAuth, async (req, res) => {
         }
     }
 );
-
 
 userRouter.post('/login', async (req, res) => {
     try{
@@ -48,7 +47,7 @@ userRouter.post('/login', async (req, res) => {
             }
     
             const token = user.generateAuthToken();
-            res.status(200).json({
+            return res.status(200).json({
                 message: "Login successful.",
                 token,
                 user: {
@@ -129,12 +128,11 @@ userRouter.put('/update/:id', async (req, res) => {
     }
 });
 
-
 userRouter.delete('/delete/:id', userAuth, async (req, res) => {
     try{
-        const { email, name, password } = req.body;
+        const  {id} = req.params;
 
-        const userNew = await User.findOneAndDelete({ email, name, password });
+        const userNew = await User.findOneAndDelete(id);
         res.status(201).json(
             {
                 message: "User deleted successfully."
@@ -150,8 +148,5 @@ userRouter.delete('/delete/:id', userAuth, async (req, res) => {
         
     }
 });
-
-
-
 
 export { userRouter };
